@@ -52,10 +52,8 @@ class Aruco_Detector():
 
         # define aruco tagdictionary, tag detection parameters, 
         # and video capture feed for tag detection
-        dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
-        params = cv2.aruco.DetectorParameters()
-
-        self.detectorObj = cv2.aruco.ArucoDetector(dictionary=dict, detectorParams=params)
+        self.dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+        self.parameters = cv2.aruco.DetectorParameters()
 
     def detect_tags(self, frame):
         # create set to store ids for discovered tags, and list to hold 
@@ -68,7 +66,9 @@ class Aruco_Detector():
 
         # detect markers in frame, get ids and corners of markers
         #corners, ids, _ = self.detector.detectMarkers(frame)
-        corners, ids, _ = self.detectorObj.detectMarkers(frame)
+        corners, ids, _ = cv2.aruco.detectMarkers(
+            frame, self.dictionary, parameters=self.parameters
+        )
 
         if corners:  # if there are corners detected
             # use a SubPixel corner refinement method to improve marker 
@@ -80,12 +80,9 @@ class Aruco_Detector():
                     WIN_SIZE, ZERO_ZONE, CRITERIA
                 )
 
-            _, rvecs, tvecs = cv2.solvePnP(
-                np.array([[-MARKER_SIZE/2, -MARKER_SIZE/2, 0.0],
-                            [MARKER_SIZE/2, -MARKER_SIZE/2, 0.0],
-                            [MARKER_SIZE/2, MARKER_SIZE/2, 0.0],
-                            [-MARKER_SIZE/2, MARKER_SIZE/2, 0.0]]),
-                corners[0], self.mtx, self.dist, flags=cv2.SOLVEPNP_ITERATIVE
+            # Pose refinement method to improve pose estimation
+            rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(
+                corners, MARKER_SIZE, self.mtx, self.dist
             )
 
             for tag_id, corners, i in zip(ids, corners, range(0, ids.size)):
@@ -110,7 +107,7 @@ class Aruco_Detector():
                     clean_corners[3].ravel(),
                     normalized_tag_x,
                     normalized_tag_y,
-                    tvecs[i][0]
+                    round(tvecs[i][0][2],2)
                 )
 
                 # add tag to dataset of tags if not already present

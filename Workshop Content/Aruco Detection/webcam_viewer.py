@@ -2,14 +2,10 @@ import cv2 as cv
 from aruco_detector import Aruco_Detector
 import os
 
+
 def main():
     
     data_folder = os.path.join(os.path.dirname(__file__), "calibration_data")
-
-    # file = open(calibration_data)
-    # file.close()
-
-    # quit(0)
 
     video_cap = cv.VideoCapture(0)
     detector = Aruco_Detector("logitech_webcam_data.npz", data_folder)
